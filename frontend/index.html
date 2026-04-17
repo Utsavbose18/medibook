@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediBook — Healthcare Appointment System</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #0369A1 0%, #0284C7 60%, #0EA5E9 100%);
+      padding: 6rem 0 5rem; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; right: -100px; top: -100px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .hero::after {
+      content: ''; position: absolute; right: 100px; bottom: -200px;
+      width: 400px; height: 400px; border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 620px; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+      color: white; padding: 0.4rem 1rem; border-radius: 100px;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .hero h1 { font-size: 3.5rem; color: white; margin-bottom: 1.25rem; line-height: 1.1; }
+    .hero h1 span { color: #BAE6FD; }
+    .hero p { color: rgba(255,255,255,0.85); font-size: 1.15rem; line-height: 1.7; margin-bottom: 2.5rem; max-width: 520px; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn-white { background: white; color: var(--primary); font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .btn-white:hover { background: #F0F9FF; transform: translateY(-2px); }
+    .btn-outline-white { background: rgba(255,255,255,0.12); color: white; border: 1.5px solid rgba(255,255,255,0.4); }
+    .btn-outline-white:hover { background: rgba(255,255,255,0.2); }
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-top: 3rem; padding-top: 2.5rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    .hero-stat .value { font-family: 'Sora', sans-serif; font-size: 1.75rem; font-weight: 800; color: white; }
+    .hero-stat .label { color: rgba(255,255,255,0.7); font-size: 0.85rem; }
+
+    /* Features */
+    .features { padding: 5rem 0; }
+    .feature-card {
+      text-align: center; padding: 2rem 1.5rem;
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-xl);
+      transition: all 0.25s;
+    }
+    .feature-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); border-color: var(--primary); }
+    .feature-icon {
+      width: 64px; height: 64px; margin: 0 auto 1.25rem;
+      border-radius: 18px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.75rem;
+    }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.6rem; }
+    .feature-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* Specialties */
+    .specialties { padding: 4rem 0; background: white; }
+    .specialty-chip {
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      padding: 1.25rem 1rem; border: 1.5px solid var(--border);
+      border-radius: 14px; cursor: pointer; transition: all 0.2s;
+      text-decoration: none; color: var(--text);
+    }
+    .specialty-chip:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .specialty-chip .spec-emoji { font-size: 2rem; }
+    .specialty-chip .spec-name { font-size: 0.82rem; font-weight: 600; text-align: center; }
+    .specialty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+    /* CTA */
+    .cta-section {
+      background: linear-gradient(135deg, #0F172A, #1E293B);
+      padding: 5rem 0; text-align: center;
+    }
+    .cta-section h2 { font-size: 2.25rem; color: white; margin-bottom: 1rem; }
+    .cta-section p { color: #94A3B8; font-size: 1.05rem; margin-bottom: 2rem; }
+
+    /* Footer */
+    footer {
+      background: #0F172A; padding: 2rem 0;
+      text-align: center; color: #475569; font-size: 0.875rem;
+    }
+    footer a { color: #0EA5E9; text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.2rem; }
+      .hero-stats { gap: 1.5rem; }
+      .specialty-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="nav-brand">
+    <div class="logo-icon">✚</div>
+    MediBook
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="doctors.html">Doctors</a>
+    <a href="login.html">My Appointments</a>
+  </div>
+  <div class="nav-actions" id="nav-actions">
+    <a href="login.html" class="btn btn-outline btn-sm">Sign In</a>
+    <a href="register.html" class="btn btn-primary btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content animate-in">
+      <div class="hero-tag">🏥 Trusted Healthcare Platform</div>
+      <h1>Your Health,<br />Our <span>Priority</span></h1>
+      <p>Book appointments with top-rated doctors in minutes. Manage your health journey with ease — from consultation to care.</p>
+      <div class="hero-actions">
+        <a href="doctors.html" class="btn btn-white btn-lg">Find a Doctor →</a>
+        <a href="register.html" class="btn btn-outline-white btn-lg">Create Free Account</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="value">50+</div><div class="label">Specialist Doctors</div></div>
+        <div class="hero-stat"><div class="value">8</div><div class="label">Specializations</div></div>
+        <div class="hero-stat"><div class="value">24/7</div><div class="label">Online Booking</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Why MediBook</div>
+      <h2>Healthcare Made Simple</h2>
+      <p>Everything you need for managing your medical appointments in one place</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="feature-card">
+        <div class="feature-icon" style="background: #E0F2FE;">📅</div>
+        <h3>Easy Booking</h3>
+        <p>Book appointments in under 2 minutes. Choose your doctor, date and time slot instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background: #D1FAE5;">👨‍⚕️</div>
+        <h3>Expert Doctors</h3>
+        <p>Browse verified specialists across 8+ specializations with full profile and experience details.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background: #FEF3C7;">📋</div>
+        <h3>Track Appointments</h3>
+        <p>View, manage and cancel your appointments anytime from your personal dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPECIALTIES -->
+<section class="specialties">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Specializations</div>
+      <h2>Find the Right Specialist</h2>
+      <p>Expert doctors across all major medical specializations</p>
+    </div>
+    <div class="specialty-grid">
+      <a href="doctors.html?spec=Cardiologist" class="specialty-chip">
+        <span class="spec-emoji">🫀</span><span class="spec-name">Cardiologist</span>
+      </a>
+      <a href="doctors.html?spec=Dermatologist" class="specialty-chip">
+        <span class="spec-emoji">🧴</span><span class="spec-name">Dermatologist</span>
+      </a>
+      <a href="doctors.html?spec=Neurologist" class="specialty-chip">
+        <span class="spec-emoji">🧠</span><span class="spec-name">Neurologist</span>
+      </a>
+      <a href="doctors.html?spec=Orthopedic" class="specialty-chip">
+        <span class="spec-emoji">🦴</span><span class="spec-name">Orthopedic</span>
+      </a>
+      <a href="doctors.html?spec=Pediatrician" class="specialty-chip">
+        <span class="spec-emoji">👶</span><span class="spec-name">Pediatrician</span>
+      </a>
+      <a href="doctors.html?spec=General+Physician" class="specialty-chip">
+        <span class="spec-emoji">🩺</span><span class="spec-name">General Physician</span>
+      </a>
+      <a href="doctors.html?spec=Gynecologist" class="specialty-chip">
+        <span class="spec-emoji">🌸</span><span class="spec-name">Gynecologist</span>
+      </a>
+      <a href="doctors.html?spec=Psychiatrist" class="specialty-chip">
+        <span class="spec-emoji">💆</span><span class="spec-name">Psychiatrist</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to Book Your Appointment?</h2>
+    <p>Join thousands of patients managing their health with MediBook</p>
+    <a href="register.html" class="btn btn-primary btn-lg" style="background: var(--accent); box-shadow: 0 8px 24px rgba(16,185,129,0.3);">
+      Create Free Account →
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>© 2025 MediBook — Healthcare Appointment System | Built with ❤️ by Utsav Bose</p>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+  // Update nav if logged in
+  const user = api.user();
+  if (user && api.token()) {
+    const actions = document.getElementById("nav-actions");
+    const link = user.role === "admin" ? "admin.html" : "dashboard.html";
+    actions.innerHTML = `
+      <a href="${link}" class="btn btn-primary btn-sm">My Dashboard →</a>
+    `;
+  }
+</script>
+</body>
+</html>

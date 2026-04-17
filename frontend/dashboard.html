@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Dashboard — MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><div class="logo-icon">✚</div>MediBook</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="doctors.html">Find Doctors</a>
+    <a href="dashboard.html" class="active">Dashboard</a>
+  </div>
+  <div class="nav-actions">
+    <span id="user-greeting" style="font-size:0.9rem; color:var(--text-muted); font-weight:500;"></span>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="dashboard-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div id="user-card" style="padding:0.5rem 0.5rem 1rem; margin-bottom:0.5rem;">
+      <div class="doctor-avatar" id="avatar" style="width:52px;height:52px;font-size:1.2rem;margin:0 0 0.75rem;"></div>
+      <div id="user-name" style="font-weight:700; font-size:0.95rem;"></div>
+      <div id="user-email" style="font-size:0.8rem; color:var(--text-muted);"></div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <nav class="sidebar-nav">
+      <a href="#" class="sidebar-link active" onclick="showSection('appointments')">
+        <span class="icon">📅</span> My Appointments
+      </a>
+      <a href="doctors.html" class="sidebar-link">
+        <span class="icon">👨‍⚕️</span> Find Doctors
+      </a>
+      <div class="sidebar-divider"></div>
+      <a href="#" class="sidebar-link" onclick="logout()" style="color:var(--danger);">
+        <span class="icon">🚪</span> Sign Out
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="dashboard-main">
+    <!-- STATS -->
+    <div class="grid grid-3 mb-3" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#E0F2FE;">📅</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total Appointments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#D1FAE5;">✅</div>
+        <div class="stat-value" id="stat-confirmed">—</div>
+        <div class="stat-label">Confirmed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#FEF3C7;">⏳</div>
+        <div class="stat-value" id="stat-pending">—</div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENTS -->
+    <div class="d-flex justify-between align-center mb-2">
+      <h2 style="font-size:1.4rem;">My Appointments</h2>
+      <a href="doctors.html" class="btn btn-primary btn-sm">+ Book New</a>
+    </div>
+    <div id="alert-box"></div>
+    <div id="appointments-list"></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const user = requireAuth();
+  if (user) {
+    document.getElementById("user-greeting").textContent = `Hi, ${user.name.split(" ")[0]}`;
+    document.getElementById("user-name").textContent = user.name;
+    document.getElementById("user-email").textContent = user.email;
+    document.getElementById("avatar").textContent = getInitials(user.name);
+  }
+
+  async function loadAppointments() {
+    const container = document.getElementById("appointments-list");
+    container.innerHTML = `<div class="text-muted text-center" style="padding:2rem;">Loading...</div>`;
+    try {
+      const appts = await api.get("/appointments/my");
+
+      const total = appts.length;
+      const confirmed = appts.filter(a => a.status === "confirmed").length;
+      const pending = appts.filter(a => a.status === "pending").length;
+      document.getElementById("stat-total").textContent = total;
+      document.getElementById("stat-confirmed").textContent = confirmed;
+      document.getElementById("stat-pending").textContent = pending;
+
+      if (appts.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No appointments yet</h3>
+            <p>Book your first appointment with one of our specialists</p>
+            <a href="doctors.html" class="btn btn-primary mt-2">Find a Doctor →</a>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
+        ${appts.map(a => `
+          <div class="appt-card">
+            <div class="appt-icon">${specialtyEmoji(a.specialization)}</div>
+            <div style="flex:1; min-width:0;">
+              <div class="d-flex align-center gap-2 mb-1">
+                <span class="fw-600" style="font-size:0.95rem;">${a.doctor_name}</span>
+                ${statusBadge(a.status)}
+              </div>
+              <div style="color:var(--text-muted); font-size:0.83rem;">
+                ${a.specialization} &nbsp;•&nbsp; ${formatDate(a.date)} &nbsp;•&nbsp; ${a.time_slot}
+              </div>
+              ${a.reason ? `<div style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem;">📝 ${a.reason}</div>` : ""}
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+              <div class="fw-600" style="color:var(--primary);">₹${a.fee}</div>
+              ${a.status !== "cancelled" ? `
+                <button class="btn btn-danger btn-sm mt-1" onclick="cancelAppt(${a.id}, this)">Cancel</button>
+              ` : ""}
+            </div>
+          </div>
+        `).join("")}
+      </div>`;
+    } catch(e) {
+      container.innerHTML = `<div class="alert alert-error">Failed to load appointments. ${e.message}</div>`;
+    }
+  }
+
+  async function cancelAppt(id, btn) {
+    if (!confirm("Cancel this appointment?")) return;
+    btn.disabled = true; btn.textContent = "...";
+    try {
+      await api.delete(`/appointments/${id}`);
+      showAlert("alert-box", "success", "Appointment cancelled.");
+      loadAppointments();
+    } catch(e) {
+      showAlert("alert-box", "error", e.message);
+      btn.disabled = false; btn.textContent = "Cancel";
+    }
+  }
+
+  function logout() {
+    clearAuth();
+    window.location.href = "index.html";
+  }
+
+  loadAppointments();
+</script>
+</body>
+</html>

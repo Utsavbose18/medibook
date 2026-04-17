@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .admin-tabs { display:flex; gap:0.25rem; margin-bottom:2rem; border-bottom: 1px solid var(--border); }
+    .admin-tab {
+      padding: 0.7rem 1.25rem; border:none; background:transparent; cursor:pointer;
+      font-family:'DM Sans',sans-serif; font-weight:600; font-size:0.9rem;
+      color:var(--text-muted); border-bottom: 2.5px solid transparent; margin-bottom:-1px;
+      transition: all 0.2s;
+    }
+    .admin-tab:hover { color:var(--text); }
+    .admin-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><div class="logo-icon">✚</div>MediBook</a>
+  <div class="nav-links">
+    <a href="admin.html" class="active">Admin Panel</a>
+  </div>
+  <div class="nav-actions">
+    <span style="font-size:0.85rem; color:var(--text-muted);">👑 Admin</span>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="container page-content">
+  <div class="d-flex justify-between align-center mb-3">
+    <div>
+      <h1 style="font-size:1.75rem;">Admin Dashboard</h1>
+      <p class="text-muted" style="font-size:0.9rem; margin-top:0.25rem;">Manage appointments, doctors and patients</p>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid grid-4 mb-3" id="stats-row">
+    <div class="stat-card"><div class="stat-icon" style="background:#E0F2FE;">👥</div><div class="stat-value" id="s-patients">—</div><div class="stat-label">Patients</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#D1FAE5;">👨‍⚕️</div><div class="stat-value" id="s-doctors">—</div><div class="stat-label">Doctors</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#FEF3C7;">📅</div><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Appointments</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#FEE2E2;">⏳</div><div class="stat-value" id="s-pending">—</div><div class="stat-label">Pending</div></div>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <!-- TABS -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="showTab('appointments', this)">📅 Appointments</button>
+    <button class="admin-tab" onclick="showTab('doctors', this)">👨‍⚕️ Doctors</button>
+    <button class="admin-tab" onclick="showTab('patients', this)">👥 Patients</button>
+  </div>
+
+  <!-- APPOINTMENTS TAB -->
+  <div id="tab-appointments">
+    <div class="d-flex gap-2 mb-2">
+      <select id="status-filter" class="form-control" style="max-width:180px;" onchange="renderAppointments()">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Patient</th><th>Doctor</th><th>Date & Time</th><th>Reason</th><th>Fee</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appt-tbody">
+          <tr><td colspan="8" class="text-center text-muted" style="padding:2rem;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DOCTORS TAB -->
+  <div id="tab-doctors" class="hidden">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Specialization</th><th>Experience</th><th>Fee</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="doc-tbody">
+          <tr><td colspan="7" class="text-center text-muted" style="padding:2rem;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PATIENTS TAB -->
+  <div id="tab-patients" class="hidden">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr>
+        </thead>
+        <tbody id="patient-tbody">
+          <tr><td colspan="5" class="text-center text-muted" style="padding:2rem;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth(true);
+
+  let allAppointments = [];
+
+  function showTab(tab, btn) {
+    ["appointments", "doctors", "patients"].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tab);
+    });
+    document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  }
+
+  async function loadStats() {
+    try {
+      const s = await api.get("/admin/stats");
+      document.getElementById("s-patients").textContent = s.patients;
+      document.getElementById("s-doctors").textContent = s.doctors;
+      document.getElementById("s-total").textContent = s.appointments;
+      document.getElementById("s-pending").textContent = s.pending;
+    } catch(e) {}
+  }
+
+  async function loadAppointments() {
+    try {
+      allAppointments = await api.get("/admin/appointments");
+      renderAppointments();
+    } catch(e) {
+      document.getElementById("appt-tbody").innerHTML =
+        `<tr><td colspan="8" class="text-center" style="color:var(--danger);">Failed to load. ${e.message}</td></tr>`;
+    }
+  }
+
+  function renderAppointments() {
+    const filter = document.getElementById("status-filter").value;
+    const data = filter ? allAppointments.filter(a => a.status === filter) : allAppointments;
+    if (data.length === 0) {
+      document.getElementById("appt-tbody").innerHTML =
+        `<tr><td colspan="8" class="text-center text-muted" style="padding:2rem;">No appointments found</td></tr>`;
+      return;
+    }
+    document.getElementById("appt-tbody").innerHTML = data.map(a => `
+      <tr>
+        <td><span class="text-muted">#${a.id}</span></td>
+        <td><strong>${a.patient_name}</strong><br/><span style="font-size:0.8rem;color:var(--text-muted);">${a.patient_email}</span></td>
+        <td>${a.doctor_name}<br/><span style="font-size:0.8rem;color:var(--text-muted);">${a.specialization}</span></td>
+        <td>${formatDate(a.date)}<br/><span style="font-size:0.8rem;color:var(--text-muted);">${a.time_slot}</span></td>
+        <td><span style="font-size:0.85rem;">${a.reason || "—"}</span></td>
+        <td><strong>₹${a.fee}</strong></td>
+        <td>${statusBadge(a.status)}</td>
+        <td>
+          ${a.status === "pending" ? `
+            <button class="btn btn-success btn-sm" onclick="updateStatus(${a.id}, 'confirmed')">✓ Confirm</button>
+            <button class="btn btn-danger btn-sm mt-1" onclick="updateStatus(${a.id}, 'cancelled')">✗ Cancel</button>
+          ` : "—"}
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function updateStatus(id, status) {
+    try {
+      await api.put(`/admin/appointments/${id}`, { status });
+      showAlert("alert-box", "success", `Appointment ${status}!`);
+      await loadAppointments();
+      await loadStats();
+    } catch(e) { showAlert("alert-box", "error", e.message); }
+  }
+
+  async function loadDoctors() {
+    try {
+      const docs = await api.get("/admin/doctors");
+      document.getElementById("doc-tbody").innerHTML = docs.map(d => `
+        <tr>
+          <td><span class="text-muted">#${d.id}</span></td>
+          <td><strong>${d.name}</strong></td>
+          <td>${specialtyEmoji(d.specialization)} ${d.specialization}</td>
+          <td>${d.experience} yrs</td>
+          <td>₹${d.fee}</td>
+          <td>${d.available ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-muted">Inactive</span>'}</td>
+          <td>
+            <button class="btn btn-sm ${d.available ? 'btn-ghost' : 'btn-success'}"
+              onclick="toggleDoctor(${d.id})">
+              ${d.available ? "Deactivate" : "Activate"}
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    } catch(e) {}
+  }
+
+  async function toggleDoctor(id) {
+    try {
+      await api.put(`/admin/doctors/${id}/toggle`, {});
+      showAlert("alert-box", "success", "Doctor status updated.");
+      loadDoctors();
+    } catch(e) { showAlert("alert-box", "error", e.message); }
+  }
+
+  async function loadPatients() {
+    try {
+      const patients = await api.get("/admin/patients");
+      document.getElementById("patient-tbody").innerHTML = patients.map(p => `
+        <tr>
+          <td><span class="text-muted">#${p.id}</span></td>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.email}</td>
+          <td>${p.phone || "—"}</td>
+          <td style="font-size:0.85rem; color:var(--text-muted);">${new Date(p.created_at).toLocaleDateString("en-IN")}</td>
+        </tr>
+      `).join("");
+    } catch(e) {}
+  }
+
+  function logout() { clearAuth(); window.location.href = "index.html"; }
+
+  // Init
+  loadStats();
+  loadAppointments();
+  loadDoctors();
+  loadPatients();
+</script>
+</body>
+</html>

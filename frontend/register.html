@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-panel-left">
+    <div class="auth-panel-content">
+      <a href="index.html" class="nav-brand" style="color:white; margin-bottom: 2.5rem; display:flex;">
+        <div class="logo-icon">✚</div> MediBook
+      </a>
+      <h1>Healthcare Made<br/>Simple for You</h1>
+      <p>Sign up free and get instant access to book appointments with verified doctors across all specializations.</p>
+      <div class="auth-features">
+        <div class="auth-feature"><div class="feat-icon">🆓</div><span>Free account — no hidden charges</span></div>
+        <div class="auth-feature"><div class="feat-icon">⚡</div><span>Book instantly, 24/7 availability</span></div>
+        <div class="auth-feature"><div class="feat-icon">🔒</div><span>Your data is safe and private</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-panel-right">
+    <div class="auth-box">
+      <h2>Create your account</h2>
+      <p class="subtitle">Start booking appointments in minutes</p>
+      <div id="alert-box"></div>
+
+      <div class="grid grid-2" style="gap:1rem;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="name" class="form-control" placeholder="Utsav Bose" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" id="phone" class="form-control" placeholder="+91 98765 43210" />
+        </div>
+      </div>
+
+      <div class="form-group mt-2">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-control" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="Min 6 characters" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="confirm-password" class="form-control" placeholder="Repeat password" />
+      </div>
+
+      <button id="register-btn" class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleRegister()">
+        Create Account
+      </button>
+
+      <p class="text-center text-muted mt-3" style="font-size:0.9rem;">
+        Already have an account? <a href="login.html" style="color:var(--primary); font-weight:600;">Sign in →</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  redirectIfLoggedIn();
+
+  async function handleRegister() {
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirm = document.getElementById("confirm-password").value;
+
+    if (!name || !email || !password) return showAlert("alert-box", "error", "Please fill all required fields");
+    if (password.length < 6) return showAlert("alert-box", "error", "Password must be at least 6 characters");
+    if (password !== confirm) return showAlert("alert-box", "error", "Passwords do not match");
+
+    const btn = document.getElementById("register-btn");
+    btn.innerHTML = `<span class="loader"></span> Creating account...`;
+    btn.disabled = true;
+
+    try {
+      const data = await api.post("/auth/register", { name, email, password, phone });
+      setAuth(data);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showAlert("alert-box", "error", err.message);
+      btn.innerHTML = "Create Account";
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
