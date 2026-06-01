@@ -1,46 +1,44 @@
+import asyncio
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
+from mongomock_motor import AsyncMongoMockClient
+from beanie import init_beanie
 
 from app.main import app
-from app.database import Base, get_db
+from app.models import User, Doctor, Appointment
+from app.seed import seed_data
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_db():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def setup_test_db():
+    client = AsyncMongoMockClient()
+    db = client.test_medibook
+
+    await init_beanie(database=db, document_models=[User, Doctor, Appointment])
+
+    # We clear the collections to start fresh on every test function
+    await User.delete_all()
+    await Doctor.delete_all()
+    await Appointment.delete_all()
+
+    # Optional: If you want tests to start with seeded data, uncomment the following line
+    # await seed_data()
     yield
-    Base.metadata.drop_all(bind=engine)
 
-@pytest.fixture
-def db_session():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@pytest_asyncio.fixture
+async def client():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
 
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-@pytest.fixture
-def test_user(client):
-    response = client.post(
+@pytest_asyncio.fixture
+async def test_user(client):
+    response = await client.post(
         "/api/auth/register",
         json={
             "name": "Test User",
@@ -49,8 +47,8 @@ def test_user(client):
             "phone": "9999999999"
         }
     )
-    if response.status_code == 400: # in case already exists from previous test run not cleaned up
-        response = client.post(
+    if response.status_code == 400: # in case already exists
+        response = await client.post(
             "/api/auth/login",
             json={
                 "email": "test@example.com",
@@ -59,9 +57,9 @@ def test_user(client):
         )
     return response.json()
 
-@pytest.fixture
-def admin_user(client):
-    response = client.post(
+@pytest_asyncio.fixture
+async def admin_user(client):
+    response = await client.post(
         "/api/auth/register",
         json={
             "name": "Admin User",
@@ -71,7 +69,7 @@ def admin_user(client):
         }
     )
     if response.status_code == 400:
-        response = client.post(
+        response = await client.post(
             "/api/auth/login",
             json={
                 "email": "admin_test@example.com",
@@ -80,14 +78,13 @@ def admin_user(client):
         )
 
     # Manually update role to admin in db
-    with TestingSessionLocal() as db:
-        from app.models import User
-        user = db.query(User).filter(User.email == "admin_test@example.com").first()
+    user = await User.find_one(User.email == "admin_test@example.com")
+    if user:
         user.role = "admin"
-        db.commit()
+        await user.save()
 
     # Re-login to get admin token
-    response = client.post(
+    response = await client.post(
         "/api/auth/login",
         json={
             "email": "admin_test@example.com",
@@ -95,12 +92,3 @@ def admin_user(client):
         }
     )
     return response.json()
-
-@pytest.fixture(autouse=True)
-def clean_db(db_session):
-    yield
-    # clear tables after each test except users to keep test_user fixture happy
-    from app.models import Appointment, Doctor
-    db_session.query(Appointment).delete()
-    db_session.query(Doctor).delete()
-    db_session.commit()

@@ -1,48 +1,42 @@
-from datetime import date, datetime
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
-from .database import Base
+from datetime import datetime, date as dt_date
+from typing import Optional
+from beanie import Document, Indexed, Link
+from pydantic import Field
+
+class User(Document):
+    name: str
+    email: Indexed(str, unique=True)
+    phone: Optional[str] = None
+    password_hash: str
+    role: str = "patient"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "users"
 
 
-class User(Base):
-    __tablename__ = "users"
+class Doctor(Document):
+    name: str
+    specialization: str
+    experience: int = 1
+    fee: float = 500.0
+    bio: Optional[str] = None
+    available: bool = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(120), nullable=False)
-    email = Column(String(180), unique=True, index=True, nullable=False)
-    phone = Column(String(30), nullable=True)
-    password_hash = Column(String(255), nullable=False)
-    role = Column(String(20), default="patient")
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    appointments = relationship("Appointment", back_populates="patient", cascade="all, delete-orphan")
+    class Settings:
+        name = "doctors"
 
 
-class Doctor(Base):
-    __tablename__ = "doctors"
+from beanie import PydanticObjectId
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(120), nullable=False)
-    specialization = Column(String(120), nullable=False)
-    experience = Column(Integer, default=1)
-    fee = Column(Float, default=500)
-    bio = Column(Text, nullable=True)
-    available = Column(Boolean, default=True)
+class Appointment(Document):
+    patient_id: PydanticObjectId
+    doctor_id: PydanticObjectId
+    date: dt_date
+    time_slot: str
+    reason: Optional[str] = None
+    status: str = "pending"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    appointments = relationship("Appointment", back_populates="doctor")
-
-
-class Appointment(Base):
-    __tablename__ = "appointments"
-
-    id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
-    date = Column(Date, nullable=False)
-    time_slot = Column(String(30), nullable=False)
-    reason = Column(Text, nullable=True)
-    status = Column(String(20), default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    patient = relationship("User", back_populates="appointments")
-    doctor = relationship("Doctor", back_populates="appointments")
+    class Settings:
+        name = "appointments"

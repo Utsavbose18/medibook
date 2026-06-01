@@ -1,9 +1,9 @@
 from datetime import date
 from pydantic import BaseModel, EmailStr
-
+from beanie import PydanticObjectId
 
 class UserOut(BaseModel):
-    id: int
+    id: PydanticObjectId
     name: str
     email: EmailStr
     phone: str | None = None
@@ -31,7 +31,7 @@ class AuthResponse(BaseModel):
 
 
 class DoctorOut(BaseModel):
-    id: int
+    id: PydanticObjectId
     name: str
     specialization: str
     experience: int
@@ -44,7 +44,7 @@ class DoctorOut(BaseModel):
 
 
 class AppointmentCreate(BaseModel):
-    doctor_id: int
+    doctor_id: PydanticObjectId
     date: date
     time_slot: str
     reason: str | None = None
@@ -55,8 +55,8 @@ class AppointmentAdminUpdate(BaseModel):
 
 
 class AppointmentOut(BaseModel):
-    id: int
-    doctor_id: int
+    id: PydanticObjectId
+    doctor_id: PydanticObjectId
     doctor_name: str
     specialization: str
     fee: float
@@ -65,9 +65,12 @@ class AppointmentOut(BaseModel):
     reason: str | None = None
     status: str
 
+    class Config:
+        from_attributes = True
+
 
 class AppointmentAdminOut(BaseModel):
-    id: int
+    id: PydanticObjectId
     patient_name: str
     patient_email: str
     doctor_name: str
